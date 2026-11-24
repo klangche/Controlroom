@@ -51,7 +51,7 @@ def choose():
     print("Repo-Starter and Controlroom Core are always included.")
     print("0) Core only\nA) All philosophies")
     for i, name in enumerate(PHILOSOPHIES, 1): print(f"{i}) {name.title()}")
-    raw = input("Choose All, Core only, or comma-separated numbers: ").strip().lower()
+    raw = ask("Choose All, Core only, or comma-separated numbers: ").strip().lower()
     if raw in ("a", "all"): chosen = PHILOSOPHIES[:]; profile = "all"
     elif raw in ("0", "core"): chosen = []; profile = "core-only"
     elif not raw: raise SystemExit("No selection made. Nothing was installed.")
@@ -77,6 +77,12 @@ def generate_agents(config, project=None):
     return body + (project if project else (ROOT / "templates/PROJECT.md").read_text(encoding="utf-8"))
 
 
+def ask(prompt):
+    """input() that treats a missing terminal (agents, CI) as an empty answer."""
+    try: return input(prompt)
+    except EOFError: return ""
+
+
 def read_lock(target):
     """Return (files, legacy). Reads .controlroom.lock (JSON) or repo-starter's plain-text lock."""
     lp = target / ".controlroom.lock"
@@ -87,74 +93,102 @@ def read_lock(target):
     for line in lp.read_text(encoding="utf-8").splitlines():
         parts = line.split()
         if not parts or parts[0] == "version": continue
-        if len(parts) != 2 or not re.fullmatch(r"[0-9a-f]{64}", parts[1]):
+        # Agents wrote either "<path> <sha256>" or sha256sum order "<sha256>  <path>".
+        hashes = [x for x in parts if re.fullmatch(r"[0-9a-f]{64}", x)]
+        if len(parts) != 2 or len(hashes) != 1:
             raise SystemExit(f"Legacy .repo-starter.lock line not understood: {line!r}. Stop and inspect it manually.")
-        files[parts[0]] = parts[1]
+        files[parts[0] if parts[1] == hashes[0] else parts[1]] = hashes[0]
     return files, True
+
+
+def is_v1(target, old):
+    """repo-starter v1: no lock, CLAUDE.md is a full copy of AGENTS.md."""
+    a, c = target / "AGENTS.md", target / "CLAUDE.md"
+    return not old and a.exists() and c.exists() and \
+        above_project(c.read_text(encoding="utf-8")).strip() == above_project(a.read_text(encoding="utf-8")).strip()
 
 
 def install(target, config):
     target = Path(target).resolve(); target.mkdir(parents=True, exist_ok=True)
     old, legacy = read_lock(target)
+    v1 = is_v1(target, old)
     agents = target / "AGENTS.md"
     project = project_section(agents.read_text(encoding="utf-8")) if agents.exists() else None
+    # Plan every write first (path -> bytes), so nothing is written when the migration must stop.
+    plan = {rel: (ROOT / rel).read_bytes() for rel in MANIFEST if rel != "AGENTS.md"}
+    plan[".controlroom/config.json"] = (json.dumps(config, indent=2) + "\n").encode("utf-8")
+    for folder in ("core", "philosophies"):
+        for src in (ROOT / folder).rglob("*.md"):
+            if folder == "philosophies" and src.parent.name != "repo-starter" and src.parent.name not in config["philosophies"]: continue
+            plan[(Path(".controlroom") / src.relative_to(ROOT)).as_posix()] = src.read_bytes()
     # Pre-existing rule files Controlroom does not own: quote them under "## Project" before overwriting.
     moved = []
     for rel in RULE_FILES:
         dst = target / rel
-        if not dst.exists() or rel in old: continue
-        text = above_project(dst.read_text(encoding="utf-8")) if rel == "AGENTS.md" else dst.read_text(encoding="utf-8")
-        if rel != "AGENTS.md" and text == (ROOT / rel).read_text(encoding="utf-8"): continue
+        if not dst.exists() or rel in old or (v1 and rel != "GEMINI.md"): continue
+        text = dst.read_text(encoding="utf-8")
+        if rel == "AGENTS.md": text = above_project(text)
+        elif text.encode("utf-8") == plan[rel]: continue
         if text.strip(): moved.append(f"\n### Previous rules from `{rel}` (moved at install, review and trim)\n\n" + "\n".join("> " + l for l in text.strip().splitlines()) + "\n")
     if moved:
         project = (project or (ROOT / "templates/PROJECT.md").read_text(encoding="utf-8")).rstrip("\n") + "\n" + "".join(moved)
-    installed, conflicts = [], []
-    for rel in MANIFEST:
+    plan["AGENTS.md"] = generate_agents(config, project).encode("utf-8")
+    conflicts = []
+    for rel in sorted(plan):
         dst = target / rel
-        locked_changed = dst.exists() and rel in old and sha(dst) != old[rel]
-        unowned = dst.exists() and rel not in old and rel not in RULE_FILES
-        if locked_changed or unowned:
-            conflicts.append(rel); continue
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        if rel == "AGENTS.md": dst.write_text(generate_agents(config, project), encoding="utf-8")
-        else: shutil.copy2(ROOT / rel, dst)
-        installed.append(rel)
-    cr = target / ".controlroom"; cr.mkdir(exist_ok=True)
-    (cr / "config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8"); installed.append(".controlroom/config.json")
-    for folder in ("core", "philosophies"):
-        for src in (ROOT / folder).rglob("*.md"):
-            if folder == "philosophies" and src.parent.name != "repo-starter" and src.parent.name not in config["philosophies"]: continue
-            rel = Path(".controlroom") / src.relative_to(ROOT); dst = target / rel
-            dst.parent.mkdir(parents=True, exist_ok=True); shutil.copy2(src, dst); installed.append(rel.as_posix())
+        if not dst.exists(): continue
+        if rel in old:
+            if sha(dst) != old[rel]: conflicts.append(rel)
+        elif rel in RULE_FILES or (v1 and rel.startswith((".claude/", ".github/"))): continue
+        elif rel.startswith(".controlroom/") and dst.read_bytes() == plan[rel]: continue
+        else: conflicts.append(rel)
+    if "AGENTS.md" in conflicts:
+        raise SystemExit("AGENTS.md was edited above '## Project' since it was installed. Nothing was changed. "
+                         "Move those edits under '## Project' (or restore the installed text), then run again.")
+    for rel in conflicts: del plan[rel]
+    for rel, data in plan.items():
+        dst = target / rel; dst.parent.mkdir(parents=True, exist_ok=True); dst.write_bytes(data)
+    # Files the old lock owned that are no longer installed (e.g. a deselected philosophy): delete if unchanged.
+    stale = [rel for rel, h in old.items() if rel not in plan and rel not in conflicts and (target / rel).exists() and sha(target / rel) == h]
+    for rel in stale: (target / rel).unlink()
+    prune(target, stale)
     for d in ("changes", "status"): (target / d).mkdir(exist_ok=True)
-    installed = sorted(set(installed))
     lock = {"schema_version": 1, "product": "Controlroom", "version": VERSION, "config": config,
-            "files": {p: sha(target / p) for p in installed}}
+            "files": {p: sha(target / p) for p in sorted(plan)}}
     (target / ".controlroom.lock").write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
     if legacy: (target / ".repo-starter.lock").rename(target / ".repo-starter.lock.migrated")
-    print(f"Controlroom {VERSION}: installed {len(installed)} files. Philosophies: {', '.join(config['philosophies']) or 'core only'}")
+    print(f"Controlroom {VERSION}: installed {len(plan)} files. Philosophies: {', '.join(config['philosophies']) or 'core only'}")
     if legacy: print("Migrated from repo-starter: .repo-starter.lock renamed to .repo-starter.lock.migrated")
+    if v1: print("Migrated from repo-starter v1: CLAUDE.md copy of the canon replaced.")
     if moved: print("Moved pre-existing rules under '## Project' in AGENTS.md; quote them in the pull request.")
+    if stale: print("Removed files no longer installed:\n- " + "\n- ".join(stale))
     if conflicts: print("Preserved local files requiring manual review:\n- " + "\n- ".join(conflicts))
     return conflicts
 
 
-def uninstall(target, assume_yes=False):
-    target = Path(target).resolve(); lp = target / ".controlroom.lock"
-    if not lp.exists(): raise SystemExit("No .controlroom.lock found. Refusing to guess what Controlroom owns.")
-    files = json.loads(lp.read_text(encoding="utf-8")).get("files", {}); kept, removed = [], []
-    for rel, expected in files.items():
-        p = target / rel
-        if not p.exists(): continue
-        if sha(p) != expected: kept.append(rel); continue
-        if rel == "AGENTS.md" and not assume_yes and input("AGENTS.md holds the Project section. Delete it? [y/N] ").strip().lower() != "y":
-            kept.append(rel); continue
-        p.unlink(); removed.append(rel)
+def prune(target, removed):
+    """Delete folders that held removed files, only when now empty."""
     folders = []
     for rel in sorted(removed, key=lambda r: -r.count("/")):
         d = (target / rel).parent
         while d != target and d.exists() and not any(d.iterdir()):
             d.rmdir(); folders.append(str(d.relative_to(target))); d = d.parent
+    return folders
+
+
+def uninstall(target, keep_agents=None):
+    """keep_agents: None = ask (no terminal = keep), True = keep AGENTS.md, False = delete it."""
+    target = Path(target).resolve(); lp = target / ".controlroom.lock"
+    if not lp.exists(): raise SystemExit("No .controlroom.lock found. Refusing to guess what Controlroom owns.")
+    files = json.loads(lp.read_text(encoding="utf-8")).get("files", {}); kept, removed = [], []
+    if keep_agents is None and (target / "AGENTS.md").exists():
+        keep_agents = ask("AGENTS.md holds the Project section. Delete it? [y/N] ").strip().lower() != "y"
+    for rel, expected in files.items():
+        p = target / rel
+        if not p.exists(): continue
+        if sha(p) != expected or (rel == "AGENTS.md" and keep_agents): kept.append(rel); continue
+        p.unlink(); removed.append(rel)
+    folders = prune(target, removed)
     lp.unlink()
     print(f"Removed {len(removed)} unchanged files. Kept {len(kept)} files. Removed {len(folders)} empty folders.")
     if kept: print("Kept (changed or declined):\n- " + "\n- ".join(kept))
@@ -195,24 +229,61 @@ def parity(rs):
     base = sections((ROOT / "philosophies/repo-starter/instructions.md").read_text(encoding="utf-8"))
     for head, body in sections((rs / "AGENTS.md").read_text(encoding="utf-8")).items():
         if base.get(head) != body: errors.append(f"AGENTS.md section missing or changed in base philosophy: {head}")
-    # Simulate a repo-starter install with a filled Project section, then migrate it.
-    with tempfile.TemporaryDirectory() as d:
-        t = Path(d)
+    version = (rs / "MANIFEST.txt").read_text().splitlines()[0].removeprefix("# version").strip()
+    cfg = {"schema_version": 1, "profile": "parity", "philosophies": ["engineering"], "language": "en"}
+
+    def fake_install(t, lock_order="path-first"):
+        """A repo-starter install as its paste prompt produces it, with a filled Project section."""
         for rel in rs_files:
             (t / rel).parent.mkdir(parents=True, exist_ok=True); shutil.copy2(rs / rel, t / rel)
         agents = (t / "AGENTS.md").read_text(encoding="utf-8")
         project = project_section(agents).replace("- Stack: Markdown.", "- Stack: Parity test stack.")
         (t / "AGENTS.md").write_text(above_project(agents) + project, encoding="utf-8")
-        version = (rs / "MANIFEST.txt").read_text().splitlines()[0].removeprefix("# version").strip()
-        (t / ".repo-starter.lock").write_text(f"version {version}\n" + "".join(f"{r} {sha(t / r)}\n" for r in rs_files), encoding="utf-8")
+        rows = [(r, sha(t / r)) for r in rs_files]
+        body = "".join(f"{r} {h}\n" if lock_order == "path-first" else f"{h}  {r}\n" for r, h in rows)
+        if lock_order != "none": (t / ".repo-starter.lock").write_text(f"version {version}\n" + body, encoding="utf-8")
+        return project
+
+    def case(name, fn):
+        with tempfile.TemporaryDirectory() as d:
+            try: fn(Path(d))
+            except AssertionError as e: errors.append(f"{name}: {e}")
+            except SystemExit as e: errors.append(f"{name}: stopped: {e}")
+
+    def migrate(t):
+        project = fake_install(t)
         (t / ".claude/skills/tdd/SKILL.md").write_text("owner edit\n", encoding="utf-8")
-        conflicts = install(t, {"schema_version": 1, "profile": "parity", "philosophies": ["engineering"], "language": "en"})
-        if project_section((t / "AGENTS.md").read_text(encoding="utf-8")) != project: errors.append("Migration did not keep '## Project' byte for byte")
-        if conflicts != [".claude/skills/tdd/SKILL.md"]: errors.append(f"Migration conflicts wrong: {conflicts}")
-        if (t / ".claude/skills/tdd/SKILL.md").read_text() != "owner edit\n": errors.append("Migration overwrote an owner-edited file")
-        if (t / ".repo-starter.lock").exists(): errors.append("Legacy lock was not retired")
-        for rel in rs_files:
-            if not (t / rel).exists(): errors.append(f"File lost in migration: {rel}")
+        conflicts = install(t, cfg)
+        assert project_section((t / "AGENTS.md").read_text(encoding="utf-8")) == project, "'## Project' not kept byte for byte"
+        assert conflicts == [".claude/skills/tdd/SKILL.md"], f"conflicts wrong: {conflicts}"
+        assert (t / ".claude/skills/tdd/SKILL.md").read_text() == "owner edit\n", "owner-edited file overwritten"
+        assert not (t / ".repo-starter.lock").exists(), "legacy lock not retired"
+        assert all((t / rel).exists() for rel in rs_files), "file lost in migration"
+        assert validate(t) == 0
+
+    def sha256sum_order(t):
+        fake_install(t, "hash-first"); install(t, cfg)
+        assert (t / ".controlroom.lock").exists()
+
+    def edited_canon_stops(t):
+        fake_install(t)
+        (t / "AGENTS.md").write_text("Owner canon edit.\n" + (t / "AGENTS.md").read_text(encoding="utf-8"), encoding="utf-8")
+        (t / "GEMINI.md").write_text("Owner Gemini rules.\n", encoding="utf-8")
+        before = {p: p.read_bytes() for p in t.rglob("*") if p.is_file()}
+        try: install(t, cfg); raise AssertionError("migration went ahead over an edited AGENTS.md")
+        except SystemExit: pass
+        assert before == {p: p.read_bytes() for p in t.rglob("*") if p.is_file()}, "files changed although migration stopped"
+
+    def v1_upgrade(t):
+        fake_install(t, "none")
+        shutil.copy2(t / "AGENTS.md", t / "CLAUDE.md")
+        install(t, cfg)
+        assert (t / "CLAUDE.md").read_bytes() == (ROOT / "CLAUDE.md").read_bytes(), "v1 CLAUDE.md not replaced"
+        assert "Previous rules from" not in (t / "AGENTS.md").read_text(encoding="utf-8"), "v1 canon copy quoted"
+
+    for name, fn in [("migration", migrate), ("sha256sum-order lock", sha256sum_order),
+                     ("edited AGENTS.md", edited_canon_stops), ("v1 upgrade", v1_upgrade)]:
+        case(name, fn)
     if errors: print("Parity failed:\n- " + "\n- ".join(errors)); return 1
     print(f"Parity passed: Controlroom {VERSION} covers repo-starter {version}."); return 0
 
@@ -240,7 +311,17 @@ def self_test():
         assert validate(t) == 0, "filling Project must not count as a change"
         install(t, cfg)
         assert project_section((t / "AGENTS.md").read_text(encoding="utf-8")) == "## Project\n\n- Goal: kept\n"
-        uninstall(t, assume_yes=True)
+        (t / ".controlroom/core/00-language.md").write_text("owner edit\n", encoding="utf-8")
+        install(t, dict(cfg, philosophies=["engineering"]))
+        assert (t / ".controlroom/core/00-language.md").read_text() == "owner edit\n", "edited .controlroom file overwritten"
+        assert not (t / ".controlroom/philosophies/work").exists(), "deselected philosophy left behind"
+        (t / ".controlroom/core/00-language.md").write_bytes((ROOT / "core/00-language.md").read_bytes())
+        sys.stdin = open("/dev/null") if Path("/dev/null").exists() else sys.stdin
+        uninstall(t)
+        assert (t / "AGENTS.md").exists(), "no terminal must mean keep AGENTS.md"
+        (t / ".controlroom.lock").write_text("{}", encoding="utf-8")
+        install(t, cfg)
+        uninstall(t, keep_agents=False)
         assert not (t / "AGENTS.md").exists() and not (t / ".claude").exists() and not (t / ".controlroom.lock").exists()
     print("Self-test passed.")
 
@@ -250,7 +331,10 @@ def main():
     sub.add_parser("configure")
     for name in ("install", "update"):
         p = sub.add_parser(name); p.add_argument("target"); p.add_argument("--config"); p.add_argument("--non-interactive", action="store_true")
-    p = sub.add_parser("uninstall"); p.add_argument("target"); p.add_argument("--yes", action="store_true", help="delete AGENTS.md without asking")
+    p = sub.add_parser("uninstall"); p.add_argument("target")
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--yes", dest="keep_agents", action="store_false", default=None, help="owner said: delete AGENTS.md")
+    g.add_argument("--keep-agents", dest="keep_agents", action="store_true", help="owner said: keep AGENTS.md")
     p = sub.add_parser("validate"); p.add_argument("target")
     p = sub.add_parser("parity", help="check Controlroom covers a repo-starter checkout"); p.add_argument("repo_starter")
     p = sub.add_parser("package"); p.add_argument("--output", required=True)
@@ -268,7 +352,7 @@ def main():
             cfg = load_config(Path(a.target) / ".controlroom/config.json"); print("Keeping the existing Controlroom philosophy selection.")
         else: cfg = choose()
         install(a.target, cfg)
-    elif a.cmd == "uninstall": uninstall(a.target, a.yes)
+    elif a.cmd == "uninstall": uninstall(a.target, a.keep_agents)
     elif a.cmd == "validate": raise SystemExit(validate(a.target))
     elif a.cmd == "parity": raise SystemExit(parity(a.repo_starter))
     elif a.cmd == "package": package(a.output)

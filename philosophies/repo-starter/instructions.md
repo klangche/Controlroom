@@ -59,7 +59,10 @@ README (https://github.com/klangche/Controlroom). It keeps the
 philosophy selection, overwrites the manifest files, restores the
 "## Project" section unchanged, creates the missing labels as in Setup
 step 3, and refreshes `.controlroom.lock`. A repo-starter install
-(`.repo-starter.lock`) is migrated by the same prompt.
+(`.repo-starter.lock`) is migrated by the same prompt. Upgrading from
+repo-starter v1 (no lock, `CLAUDE.md` is a full copy of `AGENTS.md`):
+the manifest `CLAUDE.md` replaces it; the v1 files are replaced, not
+quoted.
 
 **Uninstall** (owner runs the uninstall prompt): removes only the files
 listed in `.controlroom.lock` whose contents are unchanged. Everything

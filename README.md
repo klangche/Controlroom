@@ -117,10 +117,15 @@ update controlroom (or: update repo-starter)
    INSTALL.md if you cannot run Python 3.10+.
 2. Run `python <controlroom>/scripts/controlroom.py self-test`. It fails:
    stop and report; change nothing.
-3. Run `python <controlroom>/scripts/controlroom.py update .`. It keeps
-   .controlroom/config.json. No selection yet (fresh, or a repo-starter
-   install with .repo-starter.lock): ask me the philosophy question from
-   INSTALL.md first, as clickable choices if you can, and wait.
+3. .controlroom/config.json exists: run
+   `python <controlroom>/scripts/controlroom.py update .` (keeps it).
+   No selection yet (fresh, or a repo-starter install with
+   .repo-starter.lock): ask me the philosophy question from INSTALL.md
+   first, as clickable choices if you can, and wait. Write my answer as
+   a config file (see controlroom.config.example.json) outside the
+   repository and run `update . --config <file> --non-interactive`.
+   The script stops without changing anything if AGENTS.md was edited
+   above "## Project": tell me, do not work around it.
 4. The "## Project" section of AGENTS.md must be unchanged byte for byte.
    Files listed as preserved stay as they are; list them in the report.
 5. Create the labels from AGENTS.md section 6 that are missing, if your
@@ -136,7 +141,9 @@ Uninstall controlroom from this repository.
 
 1. Read .controlroom.lock. If it does not exist, stop and ask me: never
    guess what was installed.
-2. Run `python <controlroom>/scripts/controlroom.py uninstall .`, or by
+2. Ask me whether to delete AGENTS.md. Run
+   `python <controlroom>/scripts/controlroom.py uninstall . --yes` (delete)
+   or `--keep-agents` (keep), or by
    hand: delete each locked file whose sha256 still matches (AGENTS.md:
    text above "## Project"; ask me first); keep changed files.
 3. Delete folders left empty, then .controlroom.lock. Touch nothing else.
@@ -154,7 +161,8 @@ file per session), skipped when offline.
 ## Versions
 
 Line 1 of `MANIFEST.txt` is the version (SemVer). Bump it in every pull
-request that changes an installed file, and add one line to `VERSIONS.md`.
+request that changes an installed file, and add a `changes/` fragment.
+`VERSIONS.md` is written by release automation.
 
 ## Credits
 
