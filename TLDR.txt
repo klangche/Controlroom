@@ -1,6 +1,9 @@
 README.md: what Controlroom is and how to select philosophies before installation
 AGENTS.md: canonical rules for developing Controlroom
 CLAUDE.md: Claude pointer to AGENTS.md
+GEMINI.md: pointer for Gemini CLI and other agents
+.github/copilot-instructions.md: Copilot pointer to AGENTS.md
+.claude/: skills and reviewer subagent, portable to every agent
 BUILD.md: validation, packaging, and release process
 STATUS.md: issue and pull-request tracking contract
 VERSIONS.md: stable version history maintained at release
@@ -11,6 +14,6 @@ core/: mandatory instructions installed in every target
 philosophies/: optional composable instruction modules
 profiles/: ready-made selections
 installer/index.html: clickable pre-install selector
-scripts/controlroom.py: configure, install, update, uninstall, validate, and package
+scripts/controlroom.py: configure, install, update, uninstall, validate, parity, and package
 changes/: one release-note fragment per pull request
 status/: optional temporary handover notes

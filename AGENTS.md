@@ -13,7 +13,10 @@ Controlroom must preserve the complete Repo-Starter lifecycle while adding pre-i
 - `scripts/controlroom.py` is the reference implementation for configure, install, update, uninstall, and validate.
 - Updating generated behavior requires updating templates, tests, `MANIFEST.txt`, and documentation together.
 - Never delete an edited target file during update or uninstall.
-- Validate with `python scripts/controlroom.py self-test` before claiming completion.
+- Validate with `python scripts/controlroom.py self-test` and `python scripts/controlroom.py parity <repo-starter checkout>` before claiming completion.
+- Nothing from repo-starter may be dropped: every repo-starter manifest file stays in `MANIFEST.txt`, and its AGENTS.md sections 0-12 stay verbatim in `philosophies/repo-starter/instructions.md`. `parity` enforces both.
+- Bump line 1 of `MANIFEST.txt` (SemVer) in every pull request that changes an installed file.
+- Must work for every agent: canon in `AGENTS.md`, thin pointers only (`CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`), skills as plain files. Install must also work for an agent without Python (`INSTALL.md`).
 
 ## Workflow
 Use plan issues, one issue/branch/pull request per step, change fragments, independent review, `dev` for beta, and `main` for releases. See `templates/AGENTS.workflow.md` for the installed workflow.

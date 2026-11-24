@@ -1,102 +1,250 @@
 # Repo-Starter philosophy
 
-This is the mandatory base philosophy for Controlroom. Optional Controlroom philosophies extend it; they do not replace, weaken, or override it.
+Mandatory base for every Controlroom installation. Carried over from
+repo-starter 2.1.0 (https://github.com/klangche/repo-starter) with its
+section numbers kept, because skills cite them. Optional philosophies
+extend it; they never weaken it.
 
-## Authority and precedence
-- The repository owner is always a human, never an AI.
-- Only the owner changes canonical repository rules, except through an explicit setup/update pull request the owner merges.
-- Caution over speed. Use judgment for trivial work.
-- Precedence: think-before-coding, simplicity, surgical changes, and goal-driven execution first; role-specific skills second; lifecycle structure third. Git/GitHub, release, and safety rules override all of them.
+Based on:
+- Andrej Karpathy's agent guidelines,
+  https://github.com/forrestchang/andrej-karpathy-skills/blob/main/CLAUDE.md
+- The AI-native SDLC playbook (Claude Academy),
+  https://academy.claude.com/courses/ai-native-sdlc-playbook
+- Superpowers skill pack, https://github.com/obra/superpowers
+  (MIT; tdd, review-pr, debugging and planning adapted in `.claude/skills/`)
+- Ponytail, https://github.com/DietrichGebert/ponytail (MIT; adapted as
+  `ponytail`), and laconic, https://github.com/GabrielBarberini/laconic
+  (MIT; adapted as `laconic`)
+- Owner: the person who owns the repository or fork. Never an AI.
+- Only the owner changes this file. Exceptions: the setup and update
+  commands below, in a pull request the owner merges.
+- Caution over speed. For trivial tasks, use judgment.
+- Precedence: Karpathy principles (sections 1-4) first, then superpowers
+  procedures (the skills in `.claude/skills/`, or the plugin), then the
+  SDLC playbook structure. Git, GitHub and file rules (sections 6, 8, 9)
+  override all of them.
 
-## Language
-- Everything is English: replies, code, comments, commits, pull requests, documentation, file names, and logs.
-- User-facing translations use stable keys, English as source and fallback, and never the English sentence as the key.
+## Commands
 
-## Think before coding
-- State assumptions. If materially unsure, stop and ask.
-- If several interpretations exist, list them and ask.
-- Point out simpler approaches and important trade-offs.
-- Push back when the requested approach is wrong, unsafe, or unnecessarily complex.
-- Once the owner decides language, stack, design, or another material choice, proceed without asking again.
+**Setup** (the owner has already run the install prompt from the
+Controlroom README):
 
-## Simplicity first
-- Write the minimum code needed for the requested outcome.
-- Do not add features, abstractions, settings, compatibility layers, or impossible-state handling that nobody requested.
-- If a senior engineer would call the solution overcomplicated, simplify it.
+1. Read `AGENTS.md` fully. Ask the owner what is unclear, and how the code
+   is split. Propose the stack. In "Project" below, replace the defaults
+   with the project's own values in one pull request (`docs/setup` to
+   `main` or the default branch). Quote any pre-existing rules file in the
+   pull request description.
+2. New repository: write `README.md` about the project (section 10).
+   Existing repository: leave its README and code as they are.
+3. After the merge, create `dev` if it is missing, and make it the default
+   branch (owner action). All section 6 labels must exist; skip ones
+   that do. The agent creates the missing ones if its tools can, and
+   the labels workflow (`.github/workflows/labels.yml`) creates them on
+   every push to `main`/`dev`. Neither worked: tell the owner to run the
+   workflow from the Actions tab. The Planner opens the first plan issue.
 
-## Surgical changes
-- Touch only what the task requires.
-- Do not reformat or improve unrelated code.
-- Match existing style and remove only what the current change made unused.
-- Every changed line must trace to the request or issue.
+**Version check** (once per session, before the first task; skip when
+there is no `.controlroom.lock`): read its `version` field. Fetch line 1
+(`# version X.Y.Z`) of
+https://raw.githubusercontent.com/klangche/Controlroom/main/MANIFEST.txt.
+Newer there: ask the owner once, as a question with choices, "Controlroom
+<old> -> <new> is available. Update now?" Same major: recommend it.
+New major: recommend reading `VERSIONS.md` in Controlroom first, because
+it may need owner action. Yes: run Update. No, or the fetch fails: carry
+on, do not ask again this session.
 
-## Goal-driven execution
-- Convert work into observable checks: tests, commands, or expected output.
-- For a bug, reproduce it first, then make that reproduction pass.
-- Use a short plan with one check per step and continue until the checks pass.
-- Never claim success without running the relevant check. If it could not be run, say so.
+**Update** (owner types `update controlroom`, or the legacy
+`update repo-starter`): follow the Update prompt in the Controlroom
+README (https://github.com/klangche/Controlroom). It keeps the
+philosophy selection, overwrites the manifest files, restores the
+"## Project" section unchanged, creates the missing labels as in Setup
+step 3, and refreshes `.controlroom.lock`. A repo-starter install
+(`.repo-starter.lock`) is migrated by the same prompt.
 
-## Context budget
-- Estimate required context before starting. Above roughly 60% of the available session budget, split or hand off the work.
-- Load skill bodies only when they trigger.
-- Use subagents for heavy or parallel work and hooks for deterministic rules when the environment supports them.
-- Prefer quiet test/build/lint commands and inspect verbose output only on failure.
+**Uninstall** (owner runs the uninstall prompt): removes only the files
+listed in `.controlroom.lock` whose contents are unchanged. Everything
+edited by the owner or created by others stays. It asks before deleting
+`AGENTS.md` and removes the lock last. Without the lock file it stops and
+asks; it never guesses.
 
-## Repository and workflow
-- Separate repositories are the default. Use a monorepo only when applications share code, API, or launcher strongly enough to justify it.
-- Cross-repository goals belong in a GitHub Project.
-- Every goal starts as a plan issue. Ordered sub-issues are its checklist.
-- One step = one issue = one branch = one pull request. The pull request closes its issue.
-- Exactly one type label: `plan`, `enhancement`, `bug`, `documentation`, or `release`. Add `breaking` and `blocked` when applicable.
-- `main` contains tested releases. `dev` is the beta channel and default development branch.
-- Normal work branches from current `dev` using `feat/`, `fix/`, `docs/`, or `debug/` plus issue number and slug. Pull requests target `dev`; the owner squash-merges.
-- `dev` to `main` uses a release pull request and merge commit. Hotfixes branch from and target `main`, then `main` is merged back to `dev`.
-- Keep work branches current by merging their target branch. Do not rebase when it would require force-pushing. Never force-push.
-- Multiple agents claim only available, unblocked work; earliest claim wins. A draft pull request means in progress; ready for review means built and checked.
-- Planner plans. Builder implements one step. A different agent instance reviews.
-- Debugging records diagnosis and proposed fix before implementation.
-- If issue access is unavailable, put the plan and checklist in the pull request description.
-- AI agents never merge, approve their own pull requests, push directly to `main`/`dev` except setup creation of `dev`, change secrets, or alter protection/rulesets. Repository labels may be created only during setup/update as explicitly allowed.
+## 0. Language
 
-## Pull requests
-- Description contains what changed, checks and results, what could not be verified, and the independent review verdict.
-- Titles use `Added:`, `Changed:`, `Fixed:`, `Removed:`, or `Security:` and `!` for breaking changes.
-- Release notes derive from pull request titles and the repository's change-fragment mechanism.
+- Everything in English: code, comments, commits, pull requests, docs,
+  file names, logs, and your replies. Texts for end users in other
+  languages: one strings file, stable keys, English first, missing
+  translations fall back to English. Never use the English sentence as
+  the key.
 
-## Code
-- Choose the right language for each part and briefly explain why; the owner decides.
-- Follow the language's standard layout, formatter, linter, and test tool.
-- One file per responsibility where practical.
-- Web projects keep HTML, CSS, and JavaScript separate, use ES modules, and avoid inline scripts/styles/handlers.
-- Multi-platform software shares the portable layer and isolates platform-specific code behind a documented interface.
-- Existing project conventions win. Never rewrite functioning code merely to conform.
-- Keep secrets/configuration out of source code, commit lock files, and prefer standard libraries.
+## 1. Think before coding
 
-## Build and release
-- Release builds happen in GitHub Actions, not as local release builds.
-- CI builds/tests pull requests and changes headed to `dev` and `main`.
-- A merge into `dev` may publish `vX.Y.Z-beta.N`; stable releases originate only from `main` through the owner-run release workflow.
-- Never create or push release tags locally. Use Semantic Versioning.
-- Stable release notes cover changes since the previous stable release, not merely the previous beta.
-- Include `READ_ME_FIRST.txt` when installation requires terminal commands or unsigned-package instructions.
-- Default distribution expectations: Windows `.msi`; one universal macOS build; Linux only when requested.
+- State assumptions. If unsure, ask. Several readings: list them and ask.
+- Unclear: stop, name what is unclear, ask.
+- A simpler way exists: say so. Push back when the request looks wrong.
+- Name the tradeoffs between options.
+- Once the owner has decided (language, stack, design), build. Do not ask
+  again.
 
-## Safety
-- Never commit passwords, tokens, keys, certificates, or other secrets. Use repository/Actions secrets.
-- Ask before destructive operations including delete, reset, force-push, and uninstall.
+## 2. Simplicity first
 
-## README
-- The project README is about the project: purpose, features, install, usage, platforms, development, and license.
-- Its only required reference to repository rules is: `Contributors and AI agents follow AGENTS.md.`
+- Minimum code that solves the problem. No features, abstractions or
+  settings nobody asked for. No error handling for cases that cannot
+  happen. A senior engineer would call it overcomplicated? Then simplify.
 
-## Done and style
-- Done means verified, or explicitly states what remains unverified; the issue is closed by the merged pull request; independent review is recorded; required CI is green.
-- Be short, direct, and plain. Avoid marketing language and emojis.
-- Chat replies start with TL;DR and then concise bullets.
-- If unsure, say so rather than guessing.
+## 3. Surgical changes
 
-## Installation ownership
-- Controlroom owns only paths recorded in its manifest/lock receipt.
-- Installation/update records SHA-256 hashes. Project-specific content below `## Project` is preserved across updates.
-- Uninstall removes an installed file only when its recorded hash still matches; edited files remain.
-- Without a valid lock receipt, stop rather than guessing what to remove.
+- Touch only what the task needs. Do not reformat or "improve" other code.
+  Match the existing style. Remove only what your change made unused.
+  Every changed line traces to the request.
+
+## 4. Goal-driven execution
+
+- Turn the task into checks (a test, a command, an expected output).
+- Bug: first write a test that reproduces it, then make it pass.
+- Short plan, one check per step. Work until the checks pass.
+- Never claim it works without running it. If you could not run it, say so.
+
+## 5. Context budget
+
+- Estimate the context the task needs before you start. Above 60% of a
+  session's budget: split it or hand it over. Skills, subagents and hooks
+  exist to keep working context small:
+  - Skills: only a skill's `name`/`description` sit in context until it
+    triggers. Never paste skill bodies into the canon.
+  - Subagents: heavy or parallel work goes to a subagent defined in
+    `.claude/agents/` (Claude) or its per-tool equivalent. It loads only
+    its own instructions, not the whole conversation.
+  - Hooks run outside the model entirely. Prefer a hook over prompt text
+    when a rule must always hold.
+- Run tests, builds and linters in quiet mode (`pytest -q`,
+  `npm test --silent`, `cargo test -q`, `go test` without `-v`). Read the
+  full output only when a failure needs it.
+
+## 6. Workflow
+
+Plan, then steps. Everything in GitHub, nothing in extra files.
+
+- Repository structure (asked in Setup): separate repositories by default,
+  for one developer or many. A monorepo (one folder per app) only when apps
+  share code, an API or a launcher. Start separate: merging later is easy,
+  splitting a monorepo is hard. A goal across repositories: plan it in a
+  GitHub Project (Project > repository > app or package).
+
+- Plan: every goal starts as a plan issue with the goal. Its steps are
+  sub-issues, in order, each with what to do and its check. The sub-issue
+  list is the checklist. A request without an issue: create it first.
+- One step = one issue = one branch = one pull request. The pull request
+  says `Closes #<issue>`.
+- Labels: every issue and pull request gets labels when it is created.
+  Exactly one type label: `plan` (plan issue), `enhancement` (`feat/`),
+  `bug` (`fix/`, `debug/`, hotfix), `documentation` (`docs/`), `release`
+  (`dev` to `main`). The pull request copies the labels of its issue.
+  Add `breaking` when the title has `!`, and `blocked` while an open
+  `Blocked by #<issue>` stands (remove it when that issue closes). A
+  label is missing: create the item anyway, tell the owner which label
+  is missing, and apply it once it exists.
+- Branches: `main` holds only tested releases. `dev` is the beta channel
+  and the default branch. Branch from latest `dev`: `feat/`, `fix/`,
+  `docs/` or `debug/`, then issue number and slug (`feat/12-login`).
+  Pull requests target `dev`. The owner squash merges.
+- `dev` to `main`: one pull request, merge commit (not squash).
+- Hotfix: branch from `main`, pull request to `main`; the owner closes
+  the issue and merges `main` into `dev` after.
+- Several agents: take only an open step with no claim, no linked pull
+  request and no open `Blocked by #<issue>`. Claim it with a comment, then
+  re-read the issue: the earliest claim wins, the other agent picks another
+  step. Push the branch, open a draft pull request. Draft means in
+  progress; ready for review means built and checked.
+- Keep the branch up to date by merging its target into it. No rebase: that
+  needs a force push. Free of conflicts, and CI green if the project has CI,
+  before review.
+- Roles: Planner (plan issue), Builder (one step), Reviewer (a different
+  agent instance; see `.claude/agents/code-reviewer.md`). A rejected review
+  is normal: push the fixes as new commits to the same branch.
+- Pull request description: what changed, the checks you ran with results,
+  what you could not verify, the Reviewer's verdict. Title in the style
+  `Added: ...`, `Changed: ...`, `Fixed: ...`, `Removed: ...`,
+  `Security: ...`; add `!` for breaking changes. Release notes are built
+  from these titles.
+- Debugging: first write the diagnosis and proposed fix in the issue
+  (use the `debugging` skill). A separate Builder implements the fix.
+- Skills, per role (in `.claude/skills/<name>/SKILL.md`; agents without
+  a skill system read the same file tools):
+  - Planner: `planning` (brainstorm, then plan and sub-issues).
+  - Builder: `ponytail` on every change, plus `tdd` for features,
+    `debugging` for bugs.
+  - Any role, only on the owner's request: `laconic` (terse chat replies).
+  - Reviewer: `review-pr`.
+- No access to issues: put the plan and its checklist in the pull request
+  description instead.
+- Never merge. Never approve your own pull request. Never push to `main`
+  or `dev` (except creating `dev` in Setup). Never change repository
+  settings, rulesets, label definitions or secrets (except creating
+  missing labels in Setup or Update); applying labels is required. If you pushed to
+  `main`/`dev` by mistake, stop and tell the owner. No force push.
+
+## 7. Code
+
+- Pick the right language per part. Propose with one line of why; the
+  owner decides. Follow each language's standard layout, formatter,
+  linter and test tool.
+- One file per responsibility, named after what it does.
+- Web: HTML, CSS and JavaScript in separate files. No inline scripts,
+  styles or handlers. ES modules.
+- Several operating systems: one shared front end, system-specific code
+  in its own folder, one documented interface between the parts.
+- Existing projects: their conventions win. Do not rewrite working code
+  to match these rules.
+- Secrets and configuration stay out of the code. Commit lock files.
+  Prefer the standard library.
+
+## 8. Build and release
+
+- Everything is built by GitHub Actions. No local builds for releases.
+- CI builds and tests every pull request, to `dev` and to `main`.
+- Beta: every merge into `dev` publishes a pre-release `vX.Y.Z-beta.N`.
+  Release: only from `main`; the owner runs the release workflow in
+  GitHub Actions, which creates the tag `vX.Y.Z`. Never create or push a
+  tag locally. Versioning: SemVer; release notes from pull request titles
+  since the last release (not the last beta).
+- Assets: `<name>-<version>-<platform>.<ext>`; unsigned, so add a short
+  `READ_ME_FIRST.txt` with any terminal command the user must run.
+- Windows: .msi, silent update if already installed. macOS: one universal
+  build. Linux: only on request.
+
+## 9. Secrets and safety
+
+- Never commit passwords, tokens, keys or certificates. Use GitHub
+  Actions secrets.
+- Ask before destructive commands (delete, force push, reset,
+  uninstall).
+
+## 10. README
+
+- About the project only: what it is, features, install, usage,
+  platforms, development, license. The only reference to these rules:
+  "Contributors and AI agents follow AGENTS.md."
+
+## 11. Done
+
+- Works and verified, or clearly says what was not verified.
+- Issue closed by the merged pull request; Reviewer approved (noted in
+  the pull request); CI green, if the project has CI.
+
+## 12. Style
+
+- Short, direct, plain. No marketing language. No emojis. Chat replies:
+  TL;DR first, then short bullets. Long replies waste context (section 5).
+- Not sure: say so instead of guessing.
+
+## Install, update, uninstall (Controlroom ownership)
+
+- Files installed and owned by Controlroom are exactly the paths in
+  `MANIFEST.txt`, plus the generated `AGENTS.md` and `.controlroom/`.
+  `CLAUDE.md`, `GEMINI.md` and `.github/copilot-instructions.md` are thin
+  pointers to `AGENTS.md`; changing the canon may mean updating them.
+- `.controlroom.lock` (JSON) records `version`, the selection, and every
+  installed file with its sha256. For `AGENTS.md` the hash covers only the
+  text above "## Project", because Setup fills that section. It is machine
+  data: refreshed on update, read on uninstall.
+- Uninstall deletes an installed file only if its hash still matches the
+  lock, then the lock itself. Changed files stay.

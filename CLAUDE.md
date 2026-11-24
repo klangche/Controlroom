@@ -1,3 +1,22 @@
-# Claude instructions
+# CLAUDE.md
 
-Read and follow [`AGENTS.md`](AGENTS.md). It is the canonical instruction file. Also read the generated `.controlroom/config.json` and selected modules when working in an installed repository.
+Read and follow `AGENTS.md` — it is the canon for all agents. In an
+installed repository, `.controlroom/config.json` lists the selected
+philosophies; their full text is in `.controlroom/`. This file only holds
+Claude Code specifics. Keep under 40 lines.
+
+- Skills live in `.claude/skills/<name>/SKILL.md`. The `description`
+  frontmatter decides when they trigger; only the description stays in
+  context until they do. Do not paste skill bodies here.
+- Subagents live in `.claude/agents/`. Use `code-reviewer` for review so
+  review and build never share one context.
+- Optional for humans: `/plugin install superpowers@claude-plugins-official`
+  and `/plugin marketplace add forrestchang/andrej-karpathy-skills`. The
+  vendored skills in `.claude/skills/` already cover planning, TDD,
+  debugging, review and minimal code (`ponytail`), so plugins are a
+  bonus, not a requirement. The full Ponytail plugin adds hooks: `/plugin marketplace add DietrichGebert/ponytail`.
+- Version check and the install philosophy question (`AGENTS.md`
+  Commands, `INSTALL.md`): ask with `AskUserQuestion`.
+- Branches, pull requests and labels follow `AGENTS.md` §6 exactly.
+  Label every issue and pull request on creation. Never merge, never
+  push to `main`/`dev`.
