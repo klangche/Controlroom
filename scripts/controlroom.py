@@ -125,7 +125,7 @@ def install(target, config):
     moved = []
     for rel in RULE_FILES:
         dst = target / rel
-        if not dst.exists() or rel in old or (v1 and rel != "GEMINI.md"): continue
+        if not dst.exists() or rel in old or (v1 and rel in ("AGENTS.md", "CLAUDE.md")): continue
         text = dst.read_text(encoding="utf-8")
         if rel == "AGENTS.md": text = above_project(text)
         elif text.encode("utf-8") == plan[rel]: continue
@@ -139,7 +139,7 @@ def install(target, config):
         if not dst.exists(): continue
         if rel in old:
             if sha(dst) != old[rel]: conflicts.append(rel)
-        elif rel in RULE_FILES or (v1 and rel.startswith((".claude/", ".github/"))): continue
+        elif rel in RULE_FILES: continue
         elif rel.startswith(".controlroom/") and dst.read_bytes() == plan[rel]: continue
         else: conflicts.append(rel)
     if "AGENTS.md" in conflicts:
@@ -275,11 +275,20 @@ def parity(rs):
         assert before == {p: p.read_bytes() for p in t.rglob("*") if p.is_file()}, "files changed although migration stopped"
 
     def v1_upgrade(t):
+        # v1 shipped only AGENTS.md and a full copy as CLAUDE.md; anything else is the owner's.
         fake_install(t, "none")
+        shutil.rmtree(t / ".claude"); shutil.rmtree(t / ".github")
         shutil.copy2(t / "AGENTS.md", t / "CLAUDE.md")
-        install(t, cfg)
+        (t / ".github").mkdir()
+        (t / ".github/copilot-instructions.md").write_text("Owner Copilot rule.\n", encoding="utf-8")
+        (t / ".github/pull_request_template.md").write_text("Owner template.\n", encoding="utf-8")
+        conflicts = install(t, cfg)
+        agents = (t / "AGENTS.md").read_text(encoding="utf-8")
         assert (t / "CLAUDE.md").read_bytes() == (ROOT / "CLAUDE.md").read_bytes(), "v1 CLAUDE.md not replaced"
-        assert "Previous rules from" not in (t / "AGENTS.md").read_text(encoding="utf-8"), "v1 canon copy quoted"
+        assert "Previous rules from `CLAUDE.md`" not in agents and "Previous rules from `AGENTS.md`" not in agents, "v1 canon copy quoted"
+        assert "> Owner Copilot rule." in project_section(agents), "owner Copilot rules lost"
+        assert (t / ".github/pull_request_template.md").read_text() == "Owner template.\n", "owner PR template overwritten"
+        assert ".github/pull_request_template.md" in conflicts, "owner PR template not reported"
 
     for name, fn in [("migration", migrate), ("sha256sum-order lock", sha256sum_order),
                      ("edited AGENTS.md", edited_canon_stops), ("v1 upgrade", v1_upgrade)]:

@@ -86,6 +86,7 @@ A repository with `.repo-starter.lock` is migrated by Update:
   `## Project`. Half-migrated repositories are not allowed.
 - The old lock may list `<path> <sha256>` or `<sha256>  <path>`; accept both.
 - repo-starter v1 (no lock, `CLAUDE.md` is a full copy of `AGENTS.md`):
-  replace `CLAUDE.md` and the repo-starter files; do not quote them.
+  replace `CLAUDE.md` and do not quote it or the canon. Every other
+  existing file is the owner's: rule files are quoted, others kept.
 - Write `.controlroom.lock`, then rename `.repo-starter.lock` to
   `.repo-starter.lock.migrated`.
