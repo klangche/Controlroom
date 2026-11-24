@@ -1,0 +1,32 @@
+# ControlRoom
+
+ControlRoom is a context-aware instruction framework for AI-assisted work, coding, personal projects, writing, research, and future domains.
+
+## Model
+
+Every task starts with `core/` and then combines one or more contexts.
+
+Examples:
+
+- `core + code + work` — software development for work
+- `core + code + personal` — personal software projects
+- `core + writing + work` — professional documentation or communication
+- `core + research + personal` — research for a personal decision
+
+## Structure
+
+```text
+ControlRoom/
+├── core/
+├── contexts/
+│   ├── code/
+│   ├── work/
+│   ├── personal/
+│   ├── writing/
+│   └── research/
+├── templates/
+├── prompts/
+└── scripts/
+```
+
+All generated content is English by default, even when the user communicates in Swedish, unless another language is explicitly requested.
