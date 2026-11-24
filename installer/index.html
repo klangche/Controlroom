@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Controlroom philosophy selector</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,sans-serif}body{max-width:760px;margin:3rem auto;padding:0 1rem;line-height:1.5}fieldset{border:1px solid #888;border-radius:.7rem;padding:1rem;margin:1rem 0}label{display:block;padding:.45rem;cursor:pointer}button{padding:.75rem 1rem;margin:.5rem .5rem .5rem 0;cursor:pointer}.note{opacity:.8}.mandatory{font-weight:700}pre{padding:1rem;border:1px solid #888;border-radius:.5rem;overflow:auto}
+</style>
+</head>
+<body>
+<h1>Choose what Controlroom should follow</h1>
+<p>Make this choice before installation. <span class="mandatory">Repo-Starter is the mandatory base philosophy. Core safety, language, integrity, and change-control rules are also mandatory.</span></p>
+<fieldset><legend>Selection</legend>
+<label><input id="all" type="checkbox"> <strong>All philosophies</strong></label>
+<hr>
+<label><input class="p" value="engineering" type="checkbox"> Engineering: code, testing, debugging, build and release</label>
+<label><input class="p" value="work" type="checkbox"> Work: professional communication, decisions and confidentiality</label>
+<label><input class="p" value="personal" type="checkbox"> Personal: simple, private and maintainable solutions</label>
+<label><input class="p" value="writing" type="checkbox"> Writing: audience-focused, clear and faithful prose</label>
+<label><input class="p" value="research" type="checkbox"> Research: source quality, uncertainty and comparison</label>
+</fieldset>
+<p class="note">Selecting none installs the mandatory Repo-Starter base plus Core only.</p>
+<button id="download">Download configuration</button><button id="copy">Copy install command</button>
+<pre id="preview"></pre>
+<script>
+const boxes=[...document.querySelectorAll('.p')], all=document.querySelector('#all'), preview=document.querySelector('#preview');
+function config(){return {schema_version:1,profile:all.checked?'all':(boxes.every(x=>!x.checked)?'core-only':'custom'),philosophies:boxes.filter(x=>x.checked).map(x=>x.value),language:'en',workflow:{development_branch:'dev',release_branch:'main',require_independent_review:true}}}
+function render(){all.checked=boxes.every(x=>x.checked);preview.textContent=JSON.stringify(config(),null,2)}
+all.onchange=()=>{boxes.forEach(x=>x.checked=all.checked);render()};boxes.forEach(x=>x.onchange=render);
+document.querySelector('#download').onclick=()=>{const blob=new Blob([JSON.stringify(config(),null,2)+'\n'],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='controlroom.config.json';a.click();URL.revokeObjectURL(a.href)};
+document.querySelector('#copy').onclick=async()=>{await navigator.clipboard.writeText('python scripts/controlroom.py install /path/to/repository --config controlroom.config.json');alert('Install command copied. Review the downloaded configuration first.')};render();
+</script>
+</body></html>

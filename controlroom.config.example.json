@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "profile": "custom",
+  "philosophies": ["engineering", "work"],
+  "language": "en",
+  "workflow": {
+    "development_branch": "dev",
+    "release_branch": "main",
+    "require_independent_review": true
+  }
+}

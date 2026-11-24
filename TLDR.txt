@@ -1,0 +1,16 @@
+README.md: what Controlroom is and how to select philosophies before installation
+AGENTS.md: canonical rules for developing Controlroom
+CLAUDE.md: Claude pointer to AGENTS.md
+BUILD.md: validation, packaging, and release process
+STATUS.md: issue and pull-request tracking contract
+VERSIONS.md: stable version history maintained at release
+READ_ME_FIRST.txt: first-run instructions for release archives
+languages.csv: stable user-facing strings
+MANIFEST.txt: files owned by Controlroom distributions
+core/: mandatory instructions installed in every target
+philosophies/: optional composable instruction modules
+profiles/: ready-made selections
+installer/index.html: clickable pre-install selector
+scripts/controlroom.py: configure, install, update, uninstall, validate, and package
+changes/: one release-note fragment per pull request
+status/: optional temporary handover notes

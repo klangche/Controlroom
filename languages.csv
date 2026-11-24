@@ -1,0 +1,13 @@
+key,en
+selector.title,Choose what Controlroom should follow
+selector.description,Core safety and integrity rules are mandatory. Choose all philosophies or select only those relevant to this repository.
+selector.all,All philosophies
+selector.engineering,Engineering
+selector.work,Work
+selector.personal,Personal
+selector.writing,Writing
+selector.research,Research
+selector.download,Download configuration
+selector.copy,Copy command
+selector.none,Select at least one philosophy or choose Core only
+install.review,Review the configuration before installation
