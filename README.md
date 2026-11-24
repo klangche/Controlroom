@@ -1,3 +1,22 @@
+## Paste into AI prompt:
+
+```text
+Install Controlroom from https://github.com/klangche/Controlroom in this repository.
+```
+
+```text
+update controlroom
+```
+
+```text
+Uninstall controlroom
+```
+
+Paste one of these into any AI agent connected to your repository (Claude
+Code, GitHub Copilot, Codex, Gemini CLI, Cursor, or any agent that can read
+a file). A repo-starter install migrates with `update repo-starter` or
+`update controlroom`.
+
 # Controlroom
 
 Controlroom is the successor to Repo-Starter. Repo-Starter is the mandatory base philosophy. Controlroom adds selectable philosophies for different kinds of work.
@@ -87,3 +106,74 @@ python scripts/controlroom.py validate TARGET
 ## Project rule
 
 Everything in Controlroom itself is written in English. The user may communicate in Swedish or another language, but generated repository content and replies are English unless another output language is explicitly requested.
+
+## Update prompt
+
+```text
+update controlroom (or: update repo-starter)
+
+1. Get Controlroom: clone https://github.com/klangche/Controlroom (branch
+   main) outside this repository, or read the manual steps in its
+   INSTALL.md if you cannot run Python 3.10+.
+2. Run `python <controlroom>/scripts/controlroom.py self-test`. It fails:
+   stop and report; change nothing.
+3. .controlroom/config.json exists: run
+   `python <controlroom>/scripts/controlroom.py update .` (keeps it).
+   No selection yet (fresh, or a repo-starter install with
+   .repo-starter.lock): ask me the philosophy question from INSTALL.md
+   first, as clickable choices if you can, and wait. Write my answer as
+   a config file (see controlroom.config.example.json) outside the
+   repository and run `update . --config <file> --non-interactive`.
+   The script stops without changing anything if AGENTS.md was edited
+   above "## Project": tell me, do not work around it.
+4. The "## Project" section of AGENTS.md must be unchanged byte for byte.
+   Files listed as preserved stay as they are; list them in the report.
+5. Create the labels from AGENTS.md section 6 that are missing, if your
+   tools can; skip existing ones. Nothing else in repository settings.
+6. One pull request, branch docs/update-controlroom, to dev (to main if
+   there is no dev), with a per-file change report. Then stop.
+```
+
+## Uninstall prompt
+
+```text
+Uninstall controlroom from this repository.
+
+1. Read .controlroom.lock. If it does not exist, stop and ask me: never
+   guess what was installed.
+2. Ask me whether to delete AGENTS.md. Run
+   `python <controlroom>/scripts/controlroom.py uninstall . --yes` (delete)
+   or `--keep-agents` (keep), or by
+   hand: delete each locked file whose sha256 still matches (AGENTS.md:
+   text above "## Project"; ask me first); keep changed files.
+3. Delete folders left empty, then .controlroom.lock. Touch nothing else.
+   Report removed files, kept files and removed folders.
+```
+
+## Tokens
+
+The generated `AGENTS.md` is the only thing every session always reads.
+Skills add their description line, and their body only when triggered.
+Subagents spend no context of the main session. All rules and skills are
+files in the repository; the only call out is the version check (one small
+file per session), skipped when offline.
+
+## Versions
+
+Line 1 of `MANIFEST.txt` is the version (SemVer). Bump it in every pull
+request that changes an installed file, and add a `changes/` fragment.
+`VERSIONS.md` is written by release automation.
+
+## Credits
+
+- Andrej Karpathy-style agent guidelines:
+  https://github.com/forrestchang/andrej-karpathy-skills/blob/main/CLAUDE.md
+- The AI-native SDLC playbook (Claude Academy):
+  https://academy.claude.com/courses/ai-native-sdlc-playbook
+- Superpowers by Jesse Vincent (MIT): https://github.com/obra/superpowers
+- Ponytail by DietrichGebert (MIT): https://github.com/DietrichGebert/ponytail
+- laconic by Gabriel Barberini (MIT): https://github.com/GabrielBarberini/laconic
+- repo-starter by klangche, the mandatory base:
+  https://github.com/klangche/repo-starter (its "Added by me" list
+  carries over: agent-as-installer lifecycle, sha256 receipt, all-agent
+  canon split, token rules, portable skills).

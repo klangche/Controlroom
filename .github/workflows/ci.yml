@@ -1,0 +1,25 @@
+# Controlroom's own CI (not installed into targets). The parity job is the
+# gate for the repo-starter -> Controlroom transfer.
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main, dev]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: klangche/repo-starter
+          ref: main
+          path: .repo-starter-main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - run: python scripts/controlroom.py self-test
+      - run: python scripts/controlroom.py parity .repo-starter-main

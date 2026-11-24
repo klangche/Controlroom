@@ -1,45 +1,22 @@
-.claude/agents/code-reviewer.md
-.claude/skills/debugging/SKILL.md
-.claude/skills/planning/SKILL.md
-.claude/skills/review-pr/SKILL.md
-.claude/skills/tdd/SKILL.md
-.github/ISSUE_TEMPLATE/plan.yml
+# version 3.0.0
+# Controlroom - files installed into a target repository and owned by
+# Controlroom. Line 1 is the version (SemVer; major = an update may need
+# owner action). Successor of repo-starter 2.1.0: every repo-starter
+# manifest path is listed here. Not listed but also owned: the generated
+# AGENTS.md, .controlroom/ and .controlroom.lock. The project's own
+# README.md is never installed, nor Controlroom's own docs (BUILD.md,
+# STATUS.md, VERSIONS.md, READ_ME_FIRST.txt, languages.csv).
+AGENTS.md
+CLAUDE.md
+GEMINI.md
 .github/copilot-instructions.md
 .github/pull_request_template.md
-.github/workflows/ci.yml
-.github/workflows/release.yml
-AGENTS.md
-BUILD.md
-CLAUDE.md
-INSTALL.md
-README.md
-READ_ME_FIRST.txt
-STATUS.md
-TLDR.txt
-VERSIONS.md
-changes/.gitkeep
-changes/README.md
-changes/agent-first-install-selection.md
-changes/repo-starter-latest-base.md
-controlroom.config.example.json
-core/00-language.md
-core/05-base.md
-core/10-integrity.md
-core/20-change-control.md
-core/30-context.md
-languages.csv
-philosophies/engineering/instructions.md
-philosophies/personal/instructions.md
-philosophies/repo-starter/instructions.md
-philosophies/research/instructions.md
-philosophies/work/instructions.md
-philosophies/writing/instructions.md
-profiles/all.json
-profiles/code-personal.json
-profiles/code-work.json
-scripts/controlroom.py
-status/.gitkeep
-status/README.md
-templates/AGENTS.header.md
-templates/AGENTS.workflow.md
-templates/PROJECT.md
+.github/ISSUE_TEMPLATE/plan.yml
+.github/workflows/labels.yml
+.claude/agents/code-reviewer.md
+.claude/skills/planning/SKILL.md
+.claude/skills/tdd/SKILL.md
+.claude/skills/debugging/SKILL.md
+.claude/skills/review-pr/SKILL.md
+.claude/skills/ponytail/SKILL.md
+.claude/skills/laconic/SKILL.md

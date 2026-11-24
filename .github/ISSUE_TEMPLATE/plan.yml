@@ -1,0 +1,14 @@
+name: Plan
+description: A goal with ordered sub-issues (AGENTS.md section 6)
+labels: [plan]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+    validations:
+      required: true
+  - type: textarea
+    id: checks
+    attributes:
+      label: How we know it is done
