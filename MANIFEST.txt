@@ -4,7 +4,8 @@
 # owner action). Successor of repo-starter 2.1.0: every repo-starter
 # manifest path is listed here. Not listed but also owned: the generated
 # AGENTS.md, .controlroom/ and .controlroom.lock. The project's own
-# README.md is never installed.
+# README.md is never installed, nor Controlroom's own docs (BUILD.md,
+# STATUS.md, VERSIONS.md, READ_ME_FIRST.txt, languages.csv).
 AGENTS.md
 CLAUDE.md
 GEMINI.md
@@ -19,8 +20,3 @@ GEMINI.md
 .claude/skills/review-pr/SKILL.md
 .claude/skills/ponytail/SKILL.md
 .claude/skills/laconic/SKILL.md
-BUILD.md
-STATUS.md
-VERSIONS.md
-READ_ME_FIRST.txt
-languages.csv

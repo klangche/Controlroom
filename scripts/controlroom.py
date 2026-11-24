@@ -196,7 +196,7 @@ def uninstall(target, keep_agents=None):
 
 def validate(target):
     target = Path(target); errors = []
-    for f in ["AGENTS.md", "CLAUDE.md", "BUILD.md", "STATUS.md", "VERSIONS.md"]:
+    for f in ["AGENTS.md", "CLAUDE.md"]:
         if not (target / f).is_file(): errors.append(f"Missing {f}")
     lp = target / ".controlroom.lock"
     if lp.exists():
