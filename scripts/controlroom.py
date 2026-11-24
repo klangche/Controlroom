@@ -18,13 +18,15 @@ def load_config(path):
     return data
 
 def choose():
-    print("Choose philosophies before installation.")
+    print("Controlroom must ask before installing anything.")
+    print("Which Controlroom philosophies should this repository follow?")
     print("Core language, integrity, safety, and change-control rules are mandatory.")
     print("0) Core only\nA) All philosophies")
     for i, name in enumerate(PHILOSOPHIES, 1): print(f"{i}) {name.title()}")
-    raw = input("Selection [A or comma-separated numbers]: ").strip().lower()
-    if raw in ("a", "all", ""): chosen = PHILOSOPHIES[:]; profile = "all"
+    raw = input("Choose All, Core only, or comma-separated numbers: ").strip().lower()
+    if raw in ("a", "all"): chosen = PHILOSOPHIES[:]; profile = "all"
     elif raw in ("0", "core"): chosen = []; profile = "core-only"
+    elif not raw: raise SystemExit("No selection made. Nothing was installed.")
     else:
         try: chosen = [PHILOSOPHIES[int(x.strip())-1] for x in raw.split(",")]
         except (ValueError, IndexError): raise SystemExit("Invalid selection")
@@ -132,8 +134,8 @@ def self_test():
 def main():
     ap=argparse.ArgumentParser(); sub=ap.add_subparsers(dest="cmd",required=True)
     sub.add_parser("configure")
-    for name in ("install","update"):
-        p=sub.add_parser(name); p.add_argument("target"); p.add_argument("--config",required=True)
+    p=sub.add_parser("install"); p.add_argument("target"); p.add_argument("--config"); p.add_argument("--non-interactive",action="store_true")
+    p=sub.add_parser("update"); p.add_argument("target"); p.add_argument("--config"); p.add_argument("--non-interactive",action="store_true")
     p=sub.add_parser("uninstall"); p.add_argument("target")
     p=sub.add_parser("validate"); p.add_argument("target")
     p=sub.add_parser("package"); p.add_argument("--output",required=True)
@@ -141,7 +143,28 @@ def main():
     a=ap.parse_args()
     if a.cmd=="configure":
         cfg=choose(); out=Path("controlroom.config.json"); out.write_text(json.dumps(cfg,indent=2)+"\n"); print(f"Wrote {out}. Review it before installation.")
-    elif a.cmd in ("install","update"): install(a.target,load_config(a.config),a.cmd=="update")
+    elif a.cmd == "install":
+        if a.non_interactive:
+            if not a.config: raise SystemExit("--non-interactive requires --config")
+            cfg=load_config(a.config)
+        else:
+            if a.config: raise SystemExit("To bypass the question, --config must be combined with --non-interactive")
+            cfg=choose()
+        install(a.target,cfg,False)
+    elif a.cmd == "update":
+        if a.non_interactive:
+            if not a.config: raise SystemExit("--non-interactive requires --config")
+            cfg=load_config(a.config)
+        elif a.config:
+            raise SystemExit("To use --config during update, also pass --non-interactive")
+        else:
+            existing=Path(a.target)/".controlroom/config.json"
+            if existing.exists():
+                cfg=load_config(existing)
+                print("Keeping the existing Controlroom philosophy selection.")
+            else:
+                cfg=choose()
+        install(a.target,cfg,True)
     elif a.cmd=="uninstall": uninstall(a.target)
     elif a.cmd=="validate": raise SystemExit(validate(a.target))
     elif a.cmd=="package": package(a.output)

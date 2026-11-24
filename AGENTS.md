@@ -6,7 +6,7 @@ Canonical instructions for contributors to Controlroom itself.
 Everything is written in English, including replies, code, comments, commits, pull requests, documentation, file names, logs, and templates.
 
 ## Product invariant
-Controlroom must preserve the complete Repo-Starter lifecycle while adding pre-install philosophy selection. Core safety and integrity rules are mandatory. Optional philosophies are selected before installation. Installation must not begin until the selection is saved and reviewed.
+Controlroom must preserve the complete Repo-Starter lifecycle while adding pre-install philosophy selection. Repo-Starter is the mandatory base philosophy. Controlroom Core is mandatory. The installing AI, CLI, or agent must ask the user which optional philosophies to follow before changing the target repository. Installation must not begin until the user answers. Native clickable choices should be used when the host supports them; otherwise ask in chat or the terminal.
 
 ## Change rules
 - Keep selection modules independent and composable.
